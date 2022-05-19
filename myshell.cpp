@@ -14,12 +14,14 @@ namespace fs = std::filesystem;
 // globals
 enum class ECommand
 {
+   HELP,
    CD,
    HISTORY,
    EXIT
 };
 
 std::unordered_map< std::string, ECommand> supportedCommands {
+   { "help",    ECommand::HELP },
    { "cd",      ECommand::CD },
    { "history", ECommand::HISTORY },
    { "exit",    ECommand::EXIT }
@@ -37,6 +39,8 @@ cd(std::vector< std::string >& tokenizedInput, fs::path& cwd);
 void
 history();
 
+void help();
+
 std::vector< std::string >
 tokenize(std::string_view input);
 
@@ -47,12 +51,10 @@ main() {
    std::string input {};
    std::vector< std::string > tokenizedInput;
 
-   std::cout << "================================\n"
-                "== WELCOME TO VAROS TERMINAL! ==\n" <<
-                "== Supported commands are:    ==\n" <<
-                "== 1)cd:   change directory   ==\n" <<
-                "== 2)exit: exit terminal      ==\n" <<
-                "================================"   <<
+   std::cout << "==========================================\n"
+                "== WELCOME TO VAROS TERMINAL!           ==\n" <<
+                "== Type \"help\" for supported commands   ==\n" <<
+                "=========================================="   <<
                 std::endl;
 
    // main loop
@@ -78,6 +80,9 @@ parseInput(std::vector< std::string >& tokenizedInput, fs::path& cwd) {
   
    if (it != supportedCommands.end()) {
       switch (it->second) {
+         case ECommand::HELP:
+            help();
+            break;
          case ECommand::CD:
             cd(tokenizedInput, cwd);
             break;
@@ -111,6 +116,13 @@ void
 history() {
    for (auto& command : hist) {
       std::cout << command << std::endl;
+   }
+}
+
+void
+help() {
+   for (auto& command : supportedCommands) {
+      std::cout << command.first << std::endl;
    }
 }
 
