@@ -7,20 +7,41 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <unordered_map>
 
 namespace fs = std::filesystem;
 
 // globals
-constexpr int numOfSupportedCommands = 2;
-std::array< std::string, numOfSupportedCommands > supportedCommands { "cd", "exit" };
+enum class ECommand
+{
+   CD,
+   HISTORY,
+   EXIT
+};
+
+std::unordered_map< std::string, ECommand> supportedCommands {
+   { "cd",      ECommand::CD },
+   { "history", ECommand::HISTORY },
+   { "exit",    ECommand::EXIT }
+};
+
+std::vector< std::string > hist;
 
 // functions
-void parseInput(std::vector< std::string >& tokenizedInput, fs::path& cwd);
-void cd(std::vector< std::string >& tokenizedInput, fs::path& cwd);
+void
+parseInput(std::vector< std::string >& tokenizedInput, fs::path& cwd);
 
-std::vector< std::string > tokenize(std::string_view input);
+void
+cd(std::vector< std::string >& tokenizedInput, fs::path& cwd);
 
-int main() {
+void
+history();
+
+std::vector< std::string >
+tokenize(std::string_view input);
+
+int
+main() {
    fs::path cwDir = fs::current_path();
    std::string username { getlogin() };
    std::string input {};
@@ -33,36 +54,63 @@ int main() {
                 "== 2)exit: exit terminal      ==\n" <<
                 "================================"   <<
                 std::endl;
+
    // main loop
    while (true) {
       std::cout << username << ":" << cwDir.string() << "$ ";
       std::getline(std::cin, input);
 
+      // tokenize the user's input
       tokenizedInput = tokenize(input);
+
+      // parse the input to select which command will be executed
       parseInput(tokenizedInput, cwDir);
+      hist.push_back(input);
       input.clear();
       tokenizedInput.clear();
    }
-   return 0;
+   std::exit(EXIT_SUCCESS);
 }
 
 void
 parseInput(std::vector< std::string >& tokenizedInput, fs::path& cwd) {
-   auto command { tokenizedInput.front() };
-   
-   if (command == "cd") {
-      cd(tokenizedInput, cwd);
-   } else if (command == "exit") {
-      std::exit(EXIT_SUCCESS);
+   auto it { supportedCommands.find(tokenizedInput.front()) };
+  
+   if (it != supportedCommands.end()) {
+      switch (it->second) {
+         case ECommand::CD:
+            cd(tokenizedInput, cwd);
+            break;
+         case ECommand::HISTORY:
+            history();
+            break;
+         case ECommand::EXIT:
+            std::exit(EXIT_SUCCESS);
+         break;
+      }
+   } else {
+      std::cout << tokenizedInput.front() << ": Unknown command" << std::endl;
    }
 }
 
 void
 cd(std::vector< std::string >& tokenizedInput, fs::path& cwd) {
    if (tokenizedInput.size() == 2) {
-      cwd.assign(tokenizedInput.at(1));
+      fs::path destination { tokenizedInput.at(1) };
+      if (fs::exists(destination)) {
+         cwd.assign(destination);
+      } else {
+         std::cout << "Invalid path: directory " << destination.c_str() << " does not exist" << std::endl;
+      }
    } else {
       std::cout << "cd: Too many arguments!" << std::endl;
+   }
+}
+
+void
+history() {
+   for (auto& command : hist) {
+      std::cout << command << std::endl;
    }
 }
 
