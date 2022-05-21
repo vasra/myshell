@@ -15,16 +15,18 @@ namespace fs = std::filesystem;
 enum class ECommand
 {
    HELP,
+   LS,
    CD,
    HISTORY,
    EXIT
 };
 
 std::unordered_map< std::string, ECommand> supportedCommands {
-   { "help",    ECommand::HELP },
-   { "cd",      ECommand::CD },
+   { "help",    ECommand::HELP    },
+   { "ls",      ECommand::LS      },
+   { "cd",      ECommand::CD      },
    { "history", ECommand::HISTORY },
-   { "exit",    ECommand::EXIT }
+   { "exit",    ECommand::EXIT    }
 };
 
 std::vector< std::string > hist;
@@ -32,6 +34,9 @@ std::vector< std::string > hist;
 // functions
 void
 parseInput(std::vector< std::string >& tokenizedInput, fs::path& cwd);
+
+void
+ls(std::vector< std::string >& tokenizedInput);
 
 void
 cd(std::vector< std::string >& tokenizedInput, fs::path& cwd);
@@ -83,6 +88,9 @@ parseInput(std::vector< std::string >& tokenizedInput, fs::path& cwd) {
          case ECommand::HELP:
             help();
             break;
+         case ECommand::LS:
+            ls(tokenizedInput);
+            break;
          case ECommand::CD:
             cd(tokenizedInput, cwd);
             break;
@@ -91,10 +99,28 @@ parseInput(std::vector< std::string >& tokenizedInput, fs::path& cwd) {
             break;
          case ECommand::EXIT:
             std::exit(EXIT_SUCCESS);
-         break;
+            break;
       }
    } else {
       std::cout << tokenizedInput.front() << ": Unknown command" << std::endl;
+   }
+}
+
+void
+ls(std::vector< std::string >& tokenizedInput) {
+   if (tokenizedInput.size() == 2) {
+      auto dir { tokenizedInput.at(1) };
+      try {
+         for (auto const& dirEntry : std::filesystem::directory_iterator{ dir }) {
+            std::cout << dirEntry << std::endl;
+         }
+      } catch (std::exception e) {
+         std::cout << "ls: Directory " << dir << " does not exist" << std::endl;
+      }
+   } else if (tokenizedInput.size() < 2) {
+      std::cout << "ls: Too few arguments" << std::endl;
+   } else {
+      std::cout << "ls: Too many arguments" << std::endl;
    }
 }
 
